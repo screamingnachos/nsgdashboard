@@ -270,7 +270,7 @@ export default function ActionHub() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Assign To</label>
                 {teamRoster.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic bg-slate-50 p-3 rounded border">No team members available. Add some using "Manage Team".</p>
+                  <p className="text-sm text-slate-500 italic bg-slate-50 p-3 rounded border">No team members available. Add some using &quot;Manage Team&quot;.</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-40 overflow-y-auto">
                     {teamRoster.map(member => (
