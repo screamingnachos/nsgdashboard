@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function MetaDeepDive() {
+export default function GoogleDeepDive() {
   const [allData, setAllData] = useState<any[]>([]);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -20,7 +20,7 @@ export default function MetaDeepDive() {
   useEffect(() => {
     async function fetchData() {
       const { data } = await supabase
-        .from('meta_campaign_data')
+        .from('google_campaign_data')
         .select('*')
         .order('date', { ascending: true });
         
@@ -29,14 +29,16 @@ export default function MetaDeepDive() {
         
         const uniqueCampaigns = Array.from(new Set(data.map(d => d.campaign_name as string)));
         
-        // Check local storage for saved Meta defaults
-        const savedDefaultsStr = localStorage.getItem('nsg_meta_defaults');
+        // Check local storage for saved defaults
+        const savedDefaultsStr = localStorage.getItem('nsg_google_defaults');
         
         if (savedDefaultsStr) {
           const savedDefaults = JSON.parse(savedDefaultsStr);
+          // Make sure the saved campaigns actually still exist in the latest data
           const activeDefaults = uniqueCampaigns.filter(c => savedDefaults.includes(c));
           setSelectedCampaigns(activeDefaults.length > 0 ? activeDefaults : uniqueCampaigns);
         } else {
+          // If no defaults saved yet, select everything
           setSelectedCampaigns(uniqueCampaigns);
         }
       }
@@ -53,7 +55,7 @@ export default function MetaDeepDive() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (loading) return <div className="p-10 text-center text-slate-500">Loading Meta Ads Dashboard...</div>;
+  if (loading) return <div className="p-10 text-center text-slate-500">Loading Google Ads Dashboard...</div>;
 
   const allAvailableCampaigns = Array.from(new Set(allData.map(d => d.campaign_name as string)));
   const filteredData = allData.filter(d => selectedCampaigns.includes(d.campaign_name));
@@ -99,17 +101,17 @@ export default function MetaDeepDive() {
 
   const last7DaysGraph = dailyData.slice(-7);
 
-  let aiMessage = "Gathering enough data to analyze trends...";
+  let aiMessage = "Gathering enough data to analyze Google search trends...";
   if (yesterday.leads > 0 && avg3dLeads > 0) {
     if (yesterday.leads > avg3dLeads && yesterday.cpl < avg3dCpl) {
-      aiMessage = `Strong performance detected. Yesterday's leads (${yesterday.leads}) beat the recent average, and your cost per lead dropped to ₹${yesterday.cpl}. Whatever creatives are running right now are highly effective.`;
+      aiMessage = `Strong search intent detected. Yesterday's leads (${yesterday.leads}) beat the recent average, and your cost per lead dropped to ₹${yesterday.cpl}. Your current target keywords are highly effective.`;
     } else if (yesterday.leads < avg3dLeads && yesterday.cpl > avg3dCpl) {
-      aiMessage = `Attention needed. Lead volume is dropping below average, and your CPL has spiked to ₹${yesterday.cpl}. Consider checking if specific campaigns have maxed out their audience and need fresh ad copy.`;
+      aiMessage = `Attention needed. Lead volume from search is dropping below average, and CPL has spiked to ₹${yesterday.cpl}. Consider checking if competitors are outbidding your top performing keywords.`;
     } else {
-      aiMessage = `Performance is holding steady. You secured ${yesterday.leads} leads at ₹${yesterday.cpl} each, keeping things perfectly in line with your 3-day baseline.`;
+      aiMessage = `Search performance is holding steady. You secured ${yesterday.leads} leads at ₹${yesterday.cpl} each, keeping things perfectly in line with your 3-day baseline.`;
     }
   } else if (yesterday.leads === 0) {
-    aiMessage = `Alert: Zero leads recorded for yesterday. Verify if campaigns were paused or if the budget ran out.`;
+    aiMessage = `Alert: Zero leads recorded for yesterday. Verify if Google Ads campaigns were paused, if the budget ran out, or if search volume dropped unexpectedly.`;
   }
 
   // UI Handlers
@@ -126,19 +128,19 @@ export default function MetaDeepDive() {
 
   // Save to Local Storage
   const handleSaveDefault = () => {
-    localStorage.setItem('nsg_meta_defaults', JSON.stringify(selectedCampaigns));
+    localStorage.setItem('nsg_google_defaults', JSON.stringify(selectedCampaigns));
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
         
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Meta Ads Dashboard</h1>
-            <p className="text-slate-500 mt-1">Detailed Breakdown</p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Google Ads Dashboard</h1>
+            <p className="text-slate-500 mt-1">Search & Display Breakdown</p>
           </div>
           
           <div className="relative" ref={dropdownRef}>
@@ -147,16 +149,18 @@ export default function MetaDeepDive() {
               className="bg-white border border-slate-300 px-5 py-2.5 rounded-lg shadow-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
             >
               Filter Campaigns 
-              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full">
                 {selectedCampaigns.length}
               </span>
             </button>
 
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                
+                {/* NEW DROPDOWN HEADER WITH SAVE BUTTON */}
                 <div className="flex justify-between items-center p-3 border-b bg-slate-50">
                   <div className="space-x-3">
-                    <button onClick={handleSelectAll} className="text-xs font-bold text-blue-600 hover:text-blue-800">Select All</button>
+                    <button onClick={handleSelectAll} className="text-xs font-bold text-emerald-600 hover:text-emerald-800">Select All</button>
                     <button onClick={handleClearAll} className="text-xs font-bold text-slate-400 hover:text-slate-600">Clear All</button>
                   </div>
                   <button 
@@ -172,7 +176,7 @@ export default function MetaDeepDive() {
                     <label key={c} className="flex items-start gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                       <input 
                         type="checkbox" 
-                        className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                        className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
                         checked={selectedCampaigns.includes(c)}
                         onChange={() => handleToggleCampaign(c)}
                       />
@@ -187,9 +191,9 @@ export default function MetaDeepDive() {
 
         {/* SECTION 1: Quick Info Header */}
         <div className="grid grid-cols-3 gap-6">
-          <TopCard title="Yesterday's Leads" value={yesterday.leads} color="text-blue-600" />
-          <TopCard title="Yesterday's CPL" value={`₹${yesterday.cpl}`} color="text-green-600" />
-          <TopCard title="Yesterday's Spend" value={`₹${yesterday.spend}`} color="text-orange-600" />
+          <TopCard title="Yesterday's Leads" value={yesterday.leads} color="text-emerald-600" />
+          <TopCard title="Yesterday's CPL" value={`₹${yesterday.cpl}`} color="text-indigo-600" />
+          <TopCard title="Yesterday's Spend" value={`₹${yesterday.spend}`} color="text-rose-600" />
         </div>
 
         {/* SECTION 2: Leads Breakdown */}
@@ -200,7 +204,7 @@ export default function MetaDeepDive() {
           metric3={{ label: "60-Day Peak", value: peakLeads60d }}
           graphData={last7DaysGraph}
           dataKey="leads"
-          lineColor="#3b82f6"
+          lineColor="#059669"
         />
 
         {/* SECTION 3: CPL Breakdown */}
@@ -211,7 +215,7 @@ export default function MetaDeepDive() {
           metric3={{ label: "60-Day Best", value: `₹${minCpl60d}` }}
           graphData={last7DaysGraph}
           dataKey="cpl"
-          lineColor="#10b981"
+          lineColor="#4f46e5"
         />
 
         {/* SECTION 4: Amount Spent Breakdown */}
@@ -222,15 +226,15 @@ export default function MetaDeepDive() {
           metric3={{ label: "60-Day Low", value: `₹${minSpend60d}` }}
           graphData={last7DaysGraph}
           dataKey="spend"
-          lineColor="#f97316"
+          lineColor="#e11d48"
         />
 
         {/* Dynamic AI Insight Box */}
-        <div className="bg-blue-600 p-6 rounded-xl shadow-md text-white">
+        <div className="bg-emerald-700 p-6 rounded-xl shadow-md text-white">
           <h3 className="font-bold mb-3 flex items-center gap-2">
-            <span className="bg-blue-400/30 p-1.5 rounded-lg">✨</span> AI Insights
+            <span className="bg-emerald-500/30 p-1.5 rounded-lg">✨</span> AI Insights
           </h3>
-          <p className="text-blue-50 text-lg leading-relaxed">{aiMessage}</p>
+          <p className="text-emerald-50 text-lg leading-relaxed">{aiMessage}</p>
         </div>
 
       </div>
